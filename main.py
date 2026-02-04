@@ -1,6 +1,8 @@
 import os
 import re
 import time
+import signal
+import sys
 from datetime import datetime, timedelta, timezone
 import requests
 from dotenv import load_dotenv
@@ -145,6 +147,15 @@ def send_discord_log(msg):
             pass
 
 
+# Graceful Shutdown Handler
+def signal_handler(sig, frame):
+    print("\n[SHUTDOWN] Bot wird beendet...")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+
 print("\n=== NAHKAMPFKILL-BOT LÄUFT – +24 STUNDEN VIP PRO SERVER ===\n")
 print("Fix: Expiration-Format angepasst an Testcode (YYYY-MM-DDTHH:MM:SS.mmmmmmZ, mit Millisekunden, Z statt +00:00)\n")
 print("Neu: Teamkills werden ignoriert – kein VIP/PM dafür\n")
@@ -215,4 +226,8 @@ while True:
         if len(state["seen_log_ids"]) > 2000:
             state["seen_log_ids"] = set(list(state["seen_log_ids"])[-1000:])
 
-    time.sleep(5)
+    try:
+        time.sleep(5)
+    except KeyboardInterrupt:
+        print("\n[SHUTDOWN] Bot wird beendet...")
+        sys.exit(0)
