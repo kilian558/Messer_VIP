@@ -36,6 +36,11 @@ NAHKAMPF_WAFFEN = {
     "mpl-50 spaten"
 }
 
+# Blacklist: Diese IDs bekommen PM aber kein VIP
+VIP_BLACKLIST = {
+    "76561198859268589"  # Lexman
+}
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 for server in servers:
@@ -185,18 +190,24 @@ while True:
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 log_msg = f"[{ts}] Nahkampfkill auf {server['name']}: {killer_name} ({killer_id}) hat {victim_name} mit {weapon.upper()} gekillt"
 
-                extended, _ = extend_24h_vip_on_server(server, killer_id)
-
-                # Immer PM senden (außer bei Teamkills, was hier schon gefiltert ist)
-                pm_text = f"Super Nahkampfkill gegen {victim_name} mit {weapon.upper()}!"
-                if extended:
-                    pm_text += " +24 Stunden VIP auf diesem Server!"
-                    log_msg += " → +24h VIP verlängert/gegeben + PM gesendet"
+                # Prüfen ob Spieler auf Blacklist steht
+                if killer_id in VIP_BLACKLIST:
+                    pm_text = f"Super Nahkampfkill gegen {victim_name} mit {weapon.upper()}! +24 Stunden VIP auf diesem Server!"
+                    log_msg += " → Blacklist: Kein VIP vergeben + PM gesendet"
+                    send_private_message(server, killer_id, killer_name, pm_text)
                 else:
-                    pm_text += " Weiter so!"  # Lifetime VIP
-                    log_msg += " → Lifetime VIP – keine Verlängerung + PM gesendet"
+                    extended, _ = extend_24h_vip_on_server(server, killer_id)
 
-                send_private_message(server, killer_id, killer_name, pm_text)
+                    # Immer PM senden (außer bei Teamkills, was hier schon gefiltert ist)
+                    pm_text = f"Super Nahkampfkill gegen {victim_name} mit {weapon.upper()}!"
+                    if extended:
+                        pm_text += " +24 Stunden VIP auf diesem Server!"
+                        log_msg += " → +24h VIP verlängert/gegeben + PM gesendet"
+                    else:
+                        pm_text += " Weiter so!"  # Lifetime VIP
+                        log_msg += " → Lifetime VIP – keine Verlängerung + PM gesendet"
+
+                    send_private_message(server, killer_id, killer_name, pm_text)
 
                 print(log_msg)
                 send_discord_log(log_msg)
